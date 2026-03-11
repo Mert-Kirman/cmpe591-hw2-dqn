@@ -104,7 +104,13 @@ class DQNAgent:
         
         # Next Q values from target network
         with torch.no_grad():
-            next_q_values = self.target_net(next_states).max(1)[0].unsqueeze(1)
+            # Online network selects the best action for the next state
+            best_next_actions = self.online_net(next_states).argmax(dim=1, keepdim=True)
+            
+            # Target network evaluates the Q-value of that specific action
+            next_q_values = self.target_net(next_states).gather(1, best_next_actions)
+            
+            # Calculate the Bellman target
             target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
             
         # Compute loss and optimize
