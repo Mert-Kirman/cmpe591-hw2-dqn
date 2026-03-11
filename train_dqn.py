@@ -173,7 +173,8 @@ if __name__ == "__main__":
             tqdm.write(f"Episode {episode+1} | Avg Reward (last 100): {avg_reward:.2f} | Avg RPS: {avg_rps:.2f}")
 
     # Plot Results
-    figure_dir = os.makedirs("assets", exist_ok=True)
+    figure_dir = "assets"
+    os.makedirs(figure_dir, exist_ok=True)
     plt.figure(figsize=(12, 5))
     
     # Plot 1: Cumulative Reward
