@@ -49,12 +49,7 @@ class DQNAgent:
     def __init__(self, state_dim=6, n_actions=8):
         self.n_actions = n_actions
         
-        if torch.cuda.is_available():
-            self.device = torch.device("cuda")
-        elif torch.backends.mps.is_available():
-            self.device = torch.device("mps")
-        else:
-            self.device = torch.device("cpu")
+        self.device = torch.device("cpu") # Training was faster on CPU
         print(f"Training on device: {self.device}")
         
         # Hyperparameters
@@ -65,6 +60,7 @@ class DQNAgent:
         self.tau = 0.005
         self.batch_size = 128
         self.learning_rate = 0.0001
+        self.update_freq = 4  # (e.g., Update network every 4 steps)
         self.memory = ReplayBuffer(10000)
         
         self.steps_done = 0
@@ -136,13 +132,14 @@ if __name__ == "__main__":
     num_episodes = 2500
     episode_rewards = []
     episode_rps = [] # Reward Per Step
+    global_steps = 0  # Track total steps for update frequency
     
     for episode in tqdm(range(num_episodes), desc="Training DQN"):
         env.reset()
         state = env.high_level_state()
         
         cumulative_reward = 0.0
-        steps = 0
+        episode_steps = 0
         done = False
         
         while not done:
@@ -158,13 +155,15 @@ if __name__ == "__main__":
             # Move to the next state
             state = next_state
             cumulative_reward += reward
-            steps += 1
+            episode_steps += 1
+            global_steps += 1
             
-            # Perform one step of the optimization
-            agent.optimize_model()
+            # Perform optimization every update_freq steps
+            if global_steps % agent.update_freq == 0:
+                agent.optimize_model()
             
         episode_rewards.append(cumulative_reward)
-        episode_rps.append(cumulative_reward / max(steps, 1))
+        episode_rps.append(cumulative_reward / max(episode_steps, 1))
         
         # Print progress every 100 episodes
         if (episode + 1) % 100 == 0:
@@ -172,9 +171,23 @@ if __name__ == "__main__":
             avg_rps = np.mean(episode_rps[-100:])
             tqdm.write(f"Episode {episode+1} | Avg Reward (last 100): {avg_reward:.2f} | Avg RPS: {avg_rps:.2f}")
 
+    # Save model weights
+    model_dir = "models"
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, "dqn_model.pt")
+    torch.save({
+        'online_net_state_dict': agent.online_net.state_dict(),
+        'target_net_state_dict': agent.target_net.state_dict(),
+        'optimizer_state_dict': agent.optimizer.state_dict(),
+        'episode': num_episodes,
+        'steps_done': agent.steps_done
+    }, model_path)
+    print(f"Model saved to {model_path}")
+    
     # Plot Results
     figure_dir = "assets"
     os.makedirs(figure_dir, exist_ok=True)
+    figure_path = os.path.join(figure_dir, "dqn_training_results.png")
     plt.figure(figsize=(12, 5))
     
     # Plot 1: Cumulative Reward
@@ -199,5 +212,5 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(figure_dir, "dqn_training_results.png"))
-    print(f"Training complete! Plot saved to {os.path.join(figure_dir, 'dqn_training_results.png')}")
+    plt.savefig(figure_path)
+    print(f"Training complete! Plot saved to {figure_path}")
