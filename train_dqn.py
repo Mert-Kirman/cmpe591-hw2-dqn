@@ -48,8 +48,13 @@ class QNetwork(nn.Module):
 class DQNAgent:
     def __init__(self, state_dim=6, n_actions=8):
         self.n_actions = n_actions
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cpu")
+        
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
         print(f"Training on device: {self.device}")
         
         # Hyperparameters
@@ -125,7 +130,7 @@ class DQNAgent:
         self.target_net.load_state_dict(target_net_state_dict)
 
 if __name__ == "__main__":
-    env = Hw2Env(n_actions=8, render_mode="offscreen")
+    env = Hw2Env(n_actions=8, render_mode="blind")
     agent = DQNAgent(state_dim=6, n_actions=8)
     
     num_episodes = 2500
