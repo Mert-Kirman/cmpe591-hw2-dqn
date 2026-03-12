@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -137,7 +138,7 @@ if __name__ == "__main__":
     env = Hw2Env(n_actions=8, render_mode="blind")
     agent = DQNAgent(state_dim=6, n_actions=8)
     
-    num_episodes = 2500
+    num_episodes = 3000
     episode_rewards = []
     episode_rps = [] # Reward Per Step
     
@@ -176,28 +177,62 @@ if __name__ == "__main__":
             avg_reward = np.mean(episode_rewards[-100:])
             avg_rps = np.mean(episode_rps[-100:])
             tqdm.write(f"Episode {episode+1} | Avg Reward (last 100): {avg_reward:.2f} | Avg RPS: {avg_rps:.2f}")
-
+    
+    # Create timestamped directory for this run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = os.path.join("runs", f"run_{timestamp}")
+    os.makedirs(run_dir, exist_ok=True)
+    print(f"\nSaving training artifacts to: {run_dir}")
+    
     # Save model weights
-    model_dir = "models"
-    os.makedirs(model_dir, exist_ok=True)
-    model_path = os.path.join(model_dir, "dqn_model.pt")
+    model_path = os.path.join(run_dir, "model.pt")
     torch.save({
         'online_net_state_dict': agent.online_net.state_dict(),
     }, model_path)
     print(f"Model saved to {model_path}")
     
+    # Save training metrics as numpy arrays
+    rewards_path = os.path.join(run_dir, "rewards.npy")
+    rps_path = os.path.join(run_dir, "rps.npy")
+    np.save(rewards_path, np.array(episode_rewards))
+    np.save(rps_path, np.array(episode_rps))
+    print(f"Training metrics saved")
+    
+    # Save hyperparameters and results
+    hyperparams_path = os.path.join(run_dir, "config.txt")
+    final_avg_reward = np.mean(episode_rewards[-100:])
+    final_avg_rps = np.mean(episode_rps[-100:])
+    with open(hyperparams_path, 'w') as f:
+        f.write(f"Training Run: {timestamp}\n")
+        f.write(f"=" * 50 + "\n\n")
+        f.write(f"Hyperparameters:\n")
+        f.write(f"  gamma: {agent.gamma}\n")
+        f.write(f"  eps_start: {agent.eps_start}\n")
+        f.write(f"  eps_end: {agent.eps_end}\n")
+        f.write(f"  eps_decay: {agent.eps_decay}\n")
+        f.write(f"  tau: {agent.tau}\n")
+        f.write(f"  batch_size: {agent.batch_size}\n")
+        f.write(f"  learning_rate: {agent.learning_rate}\n")
+        f.write(f"  update_freq: {agent.update_freq}\n")
+        f.write(f"  buffer_capacity: {agent.memory.buffer.maxlen}\n")
+        f.write(f"  num_episodes: {num_episodes}\n")
+        f.write(f"\nResults:\n")
+        f.write(f"  final_avg_reward (last 100): {final_avg_reward:.2f}\n")
+        f.write(f"  final_avg_rps (last 100): {final_avg_rps:.2f}\n")
+        f.write(f"  max_reward: {max(episode_rewards):.2f}\n")
+        f.write(f"  min_reward: {min(episode_rewards):.2f}\n")
+    print(f"Hyperparameters saved to {hyperparams_path}")
+    
     # Plot Results
-    figure_dir = "assets"
-    os.makedirs(figure_dir, exist_ok=True)
-    figure_path = os.path.join(figure_dir, "dqn_training_results.png")
-    plt.figure(figsize=(12, 5))
+    figure_path = os.path.join(run_dir, "training_plot.png")
+    plt.figure(figsize=(12, 8))
     
     # Plot 1: Cumulative Reward
     plt.subplot(2, 1, 1)
-    plt.plot(episode_rewards, alpha=0.6, color='blue')
+    plt.plot(episode_rewards, alpha=0.6)
     # Add a moving average for cleaner visualization
-    moving_avg_reward = np.convolve(episode_rewards, np.ones(50)/50, mode='valid')
-    plt.plot(moving_avg_reward, color='red', label='50-Episode Moving Avg')
+    moving_avg_reward = np.convolve(episode_rewards, np.ones(100)/100, mode='valid')
+    plt.plot(moving_avg_reward, label='100-Episode Moving Avg')
     plt.title('Cumulative Reward over Episodes')
     plt.xlabel('Episode')
     plt.ylabel('Reward')
@@ -205,9 +240,9 @@ if __name__ == "__main__":
     
     # Plot 2: Reward Per Step (RPS)
     plt.subplot(2, 1, 2)
-    plt.plot(episode_rps, alpha=0.6, color='green')
-    moving_avg_rps = np.convolve(episode_rps, np.ones(50)/50, mode='valid')
-    plt.plot(moving_avg_rps, color='darkgreen', label='50-Episode Moving Avg')
+    plt.plot(episode_rps, alpha=0.6)
+    moving_avg_rps = np.convolve(episode_rps, np.ones(100)/100, mode='valid')
+    plt.plot(moving_avg_rps, label='100-Episode Moving Avg')
     plt.title('Reward Per Step (RPS) over Episodes')
     plt.xlabel('Episode')
     plt.ylabel('RPS')
