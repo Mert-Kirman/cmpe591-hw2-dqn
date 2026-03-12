@@ -55,14 +55,14 @@ class DQNAgent:
         
         # Hyperparameters
         self.gamma = 0.99
-        self.eps_start = 0.9
+        self.eps_start = 1.0
         self.eps_end = 0.05
-        self.eps_decay = 10000
+        self.eps_decay = 20000
         self.tau = 0.005
-        self.batch_size = 128
-        self.learning_rate = 0.0001
+        self.batch_size = 256
+        self.learning_rate = 0.0006
         self.update_freq = 4  # (e.g., Update network every 4 steps)
-        self.memory = ReplayBuffer(10000)
+        self.memory = ReplayBuffer(100000)
         
         self.steps_done = 0
         
@@ -135,12 +135,20 @@ class DQNAgent:
         self.target_net.load_state_dict(target_net_state_dict)
 
 if __name__ == "__main__":
+    # Create timestamped directory for this run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = os.path.join("runs", f"run_{timestamp}")
+    os.makedirs(run_dir, exist_ok=True)
+    
+    model_path = os.path.join(run_dir, "model.pt")
+
     env = Hw2Env(n_actions=8, render_mode="blind")
     agent = DQNAgent(state_dim=6, n_actions=8)
     
     num_episodes = 3000
     episode_rewards = []
     episode_rps = [] # Reward Per Step
+    best_avg_rps = -float('inf') # Track best average RPS for model saving
     
     for episode in tqdm(range(num_episodes), desc="Training DQN"):
         env.reset()
@@ -177,19 +185,12 @@ if __name__ == "__main__":
             avg_reward = np.mean(episode_rewards[-100:])
             avg_rps = np.mean(episode_rps[-100:])
             tqdm.write(f"Episode {episode+1} | Avg Reward (last 100): {avg_reward:.2f} | Avg RPS: {avg_rps:.2f}")
-    
-    # Create timestamped directory for this run
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = os.path.join("runs", f"run_{timestamp}")
-    os.makedirs(run_dir, exist_ok=True)
-    print(f"\nSaving training artifacts to: {run_dir}")
-    
-    # Save model weights
-    model_path = os.path.join(run_dir, "model.pt")
-    torch.save({
-        'online_net_state_dict': agent.online_net.state_dict(),
-    }, model_path)
-    print(f"Model saved to {model_path}")
+
+            # Save the model if it achieves a new high score in efficiency
+            if avg_rps > best_avg_rps:
+                best_avg_rps = avg_rps
+                torch.save(agent.online_net.state_dict(), model_path)
+                tqdm.write(f"*** New Best Model Saved with RPS: {best_avg_rps:.3f} ***")
     
     # Save training metrics as numpy arrays
     rewards_path = os.path.join(run_dir, "rewards.npy")
