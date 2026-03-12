@@ -74,14 +74,16 @@ class DQNAgent:
         self.optimizer = optim.Adam(self.online_net.parameters(), lr=self.learning_rate)
         self.criterion = nn.SmoothL1Loss() 
         
-    def select_action(self, state):
+    def select_action(self, state, training=True):
         # Continuous exponential decay for smooth transition from pure exploration to almost pure exploitation
-        epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
-        self.steps_done += 1
+        if training:
+            epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
+            self.steps_done += 1
+            
+            if random.random() < epsilon:
+                return random.randint(0, self.n_actions - 1)
         
-        if random.random() < epsilon:
-            return random.randint(0, self.n_actions - 1)
-        
+        # Greedy action selection (used during testing or when epsilon check fails)
         with torch.no_grad():
             state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)    # Shape: (1, state_dim)
             return self.online_net(state_tensor).argmax().item()
@@ -112,7 +114,7 @@ class DQNAgent:
             
             # Calculate the Bellman target
             target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
-            
+
         # Compute loss and optimize
         loss = self.criterion(q_values, target_q_values)
         self.optimizer.zero_grad()
@@ -138,7 +140,6 @@ if __name__ == "__main__":
     num_episodes = 2500
     episode_rewards = []
     episode_rps = [] # Reward Per Step
-    global_steps = 0  # Track total steps for update frequency
     
     for episode in tqdm(range(num_episodes), desc="Training DQN"):
         env.reset()
@@ -162,10 +163,9 @@ if __name__ == "__main__":
             state = next_state
             cumulative_reward += reward
             episode_steps += 1
-            global_steps += 1
             
             # Perform optimization every update_freq steps
-            if global_steps % agent.update_freq == 0:
+            if episode_steps % agent.update_freq == 0:
                 agent.optimize_model()
             
         episode_rewards.append(cumulative_reward)
@@ -183,10 +183,6 @@ if __name__ == "__main__":
     model_path = os.path.join(model_dir, "dqn_model.pt")
     torch.save({
         'online_net_state_dict': agent.online_net.state_dict(),
-        'target_net_state_dict': agent.target_net.state_dict(),
-        'optimizer_state_dict': agent.optimizer.state_dict(),
-        'episode': num_episodes,
-        'steps_done': agent.steps_done
     }, model_path)
     print(f"Model saved to {model_path}")
     
@@ -197,7 +193,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(12, 5))
     
     # Plot 1: Cumulative Reward
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 1, 1)
     plt.plot(episode_rewards, alpha=0.6, color='blue')
     # Add a moving average for cleaner visualization
     moving_avg_reward = np.convolve(episode_rewards, np.ones(50)/50, mode='valid')
@@ -208,7 +204,7 @@ if __name__ == "__main__":
     plt.legend()
     
     # Plot 2: Reward Per Step (RPS)
-    plt.subplot(1, 2, 2)
+    plt.subplot(2, 1, 2)
     plt.plot(episode_rps, alpha=0.6, color='green')
     moving_avg_rps = np.convolve(episode_rps, np.ones(50)/50, mode='valid')
     plt.plot(moving_avg_rps, color='darkgreen', label='50-Episode Moving Avg')
