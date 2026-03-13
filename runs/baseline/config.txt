@@ -1,0 +1,20 @@
+Training Run: 20260313_155606
+==================================================
+
+Hyperparameters:
+  gamma: 0.99
+  eps_start: 0.9
+  eps_end: 0.05
+  eps_decay: 10000
+  tau: 0.005
+  batch_size: 128
+  learning_rate: 0.0001
+  update_freq: 4
+  buffer_capacity: 10000
+  num_episodes: 3000
+
+Results:
+  final_avg_reward (last 100): 23.09
+  final_avg_rps (last 100): 0.47
+  max_reward: 48.94
+  min_reward: 1.03
