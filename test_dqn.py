@@ -4,7 +4,7 @@ from train_dqn import DQNAgent
 
 # Load saved model
 agent = DQNAgent()
-model_path = "runs/run_20260312_224533/model.pt"  # Update this path to your saved model
+model_path = "runs/experiment_2_more_exploration_decay_20000/model.pt"  # Update this path to your saved model
 agent.online_net.load_state_dict(torch.load(model_path))
 agent.online_net.eval()  # Set the network to evaluation mode
 
