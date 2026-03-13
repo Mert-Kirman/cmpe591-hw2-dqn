@@ -9,6 +9,34 @@ This repository contains the implementation of a Double Deep Q-Network (DDQN) de
 * **Algorithm:** Double DQN (DDQN) with Polyak averaging (Soft Updates, $\tau = 0.005$) to stabilize target Q-value estimations. Model saving was dynamically handled by tracking the highest 100-episode moving average of **Reward Per Step (RPS)** to prioritize policy efficiency over raw cumulative reward.
 * **Reward Function:** The environment yields a dense reward at each step defined as `1/(ee_to_obj) + 1/(obj_to_goal)`.
 
+## Directory Structure
+```text
+.
+├── assets
+│   ├── baseline_training_plot.png
+│   ├── experiment_1_training_plot.png
+│   ├── experiment_2_training_plot.png
+│   ├── experiment_3_training_plot.png
+│   └── reward_rps_comparisons.png
+├── environment.py
+├── homework2.py
+├── mujoco_menagerie
+├── plot_reward_rps_comparison.py
+├── README.md
+├── runs
+│   ├── baseline
+│   ├── experiment_1_lr_0.001
+│   ├── experiment_2_more_exploration_decay_20000
+│   └── experiment_3_most_exploration_decay_30000
+├── test_dqn.py
+└── train_dqn.py
+```
+
+## How to Run the Scripts
+* **Training (`train_dqn.py`):** Executes the DDQN training loop. All training artifacts, including reward/RPS NumPy arrays, hyperparameter configurations, and the best .pth model weights, are automatically saved into a dedicated folder within the `runs/` directory.
+* **Testing (`test_dqn.py`):** Runs the physical MuJoCo simulation for 100 episodes to visually observe the trained agent's performance. Note: You must specify the path to your desired model weights inside the script before execution.
+* **Plotting (`plot_reward_rps_comparison.py`):** Generates the composite 100-episode moving average comparison graphs. To use this, populate the array inside the script with the target directory paths from your `runs/` folder.
+
 ---
 
 ## Performance Summary
