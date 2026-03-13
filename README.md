@@ -51,7 +51,8 @@ Below is the combined 100-Episode Moving Average comparison of both the Cumulati
 ## Experimental Runs & Hyperparameter Tuning
 
 ### 1. Training Run: Baseline
-* **Hyperparameters:** * `gamma`: 0.99
+* **Hyperparameters:** 
+  * `gamma`: 0.99
   * `eps_start`: 0.9
   * `eps_end`: 0.05
   * `eps_decay`: 10000
@@ -67,7 +68,8 @@ Below is the combined 100-Episode Moving Average comparison of both the Cumulati
 ![Baseline Plot](assets/baseline_training_plot.png)
 
 ### 2. Training Run: Experiment 1 (The "Impatient" Agent)
-* **Hyperparameters:** * `gamma`: 0.99
+* **Hyperparameters:** 
+  * `gamma`: 0.99
   * `eps_start`: 0.9
   * `eps_end`: 0.05
   * `eps_decay`: 10000
@@ -83,7 +85,8 @@ Below is the combined 100-Episode Moving Average comparison of both the Cumulati
 ![Experiment 1 Plot](assets/experiment_1_training_plot.png)
 
 ### 3. Training Run: Experiment 2 (The Golden Configuration)
-* **Hyperparameters:** * `gamma`: 0.99
+* **Hyperparameters:** 
+  * `gamma`: 0.99
   * `eps_start`: 1.0
   * `eps_end`: 0.05
   * `eps_decay`: 20000
@@ -99,7 +102,8 @@ Below is the combined 100-Episode Moving Average comparison of both the Cumulati
 ![Experiment 2 Plot](assets/experiment_2_training_plot.png)
 
 ### 4. Training Run: Experiment 3 (The Over-Explorer)
-* **Hyperparameters:** * `gamma`: 0.99
+* **Hyperparameters:** 
+  * `gamma`: 0.99
   * `eps_start`: 1.0
   * `eps_end`: 0.1
   * `eps_decay`: 30000
